@@ -1,0 +1,94 @@
+<!-- app/templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Scraper Bot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Web Scraper Bot</h1>
+            <p>Enter a URL to scrape its content</p>
+        </header>
+        
+        <form id="scrape-form">
+            <input type="url" id="url-input" placeholder="https://example.com" required>
+            <button type="submit">Scrape</button>
+        </form>
+        
+        <div id="result" class="result-section">
+            <!-- Scraped data will be displayed here -->
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Web Scraper Bot</p>
+    </footer>
+
+    <script>
+        document.getElementById('scrape-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const url = document.getElementById('url-input').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p class="info">Scraping...</p>';
+
+            try {
+                const response = await fetch('/scrape', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    resultDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
+                    return;
+                }
+
+                // Construct the HTML for displaying data
+                let html = `<section class="data-section">
+                                <h2>Title</h2>
+                                <p>${data.title}</p>
+                            </section>`;
+
+                if (data.headings.length > 0) {
+                    html += `<section class="data-section">
+                                <h2>Headings</h2>
+                                <ul>${data.headings.map(h => `<li>${h}</li>`).join('')}</ul>
+                             </section>`;
+                }
+
+                if (data.paragraphs.length > 0) {
+                    html += `<section class="data-section">
+                                <h2>Paragraphs</h2>
+                                <div class="paragraphs">
+                                    ${data.paragraphs.map(p => `<p>${p}</p>`).join('')}
+                                </div>
+                             </section>`;
+                }
+
+                if (data.links.length > 0) {
+                    html += `<section class="data-section">
+                                <h2>Links</h2>
+                                <ul class="links-list">
+                                    ${data.links.map(link => `<li><a href="${link}" target="_blank">${link}</a></li>`).join('')}
+                                </ul>
+                             </section>`;
+                }
+
+                resultDiv.innerHTML = html;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
